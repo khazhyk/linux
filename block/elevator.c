@@ -560,9 +560,11 @@ static inline bool elv_support_iosched(struct request_queue *q)
 	return true;
 }
 
+static char chosen_elevator[ELV_NAME_MAX] = "mq-deadline";
+
 /*
- * For single queue devices, default to using mq-deadline. If we have multiple
- * queues or mq-deadline is not available, default to "none".
+ * For single queue devices, default to chosen elevator. If we have multiple
+ * queues or chosen elevator is not available, default to "none".
  */
 static struct elevator_type *elevator_get_default(struct request_queue *q)
 {
@@ -573,7 +575,7 @@ static struct elevator_type *elevator_get_default(struct request_queue *q)
 	    !blk_mq_is_shared_tags(q->tag_set->flags))
 		return NULL;
 
-	return elevator_find_get(q, "mq-deadline");
+	return elevator_find_get(q, chosen_elevator);
 }
 
 /*
@@ -813,9 +815,23 @@ EXPORT_SYMBOL(elv_rb_latter_request);
 
 static int __init elevator_setup(char *str)
 {
-	pr_warn("Kernel parameter elevator= does not have any effect anymore.\n"
-		"Please use sysfs to set IO scheduler for individual devices.\n");
+	strncpy(chosen_elevator, str, sizeof(chosen_elevator) - 1);
 	return 1;
 }
 
 __setup("elevator=", elevator_setup);
+
+void __init load_default_elevator_module(void)
+{
+	struct elevator_type *e;
+
+	if (!chosen_elevator[0])
+		return;
+
+	spin_lock(&elv_list_lock);
+	e = __elevator_find(chosen_elevator);
+	spin_unlock(&elv_list_lock);
+
+	if (!e)
+		request_module("%s-iosched", chosen_elevator);
+}

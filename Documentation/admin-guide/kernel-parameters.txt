@@ -1437,6 +1437,13 @@
 			See comment before function elanfreq_setup() in
 			arch/x86/kernel/cpu/cpufreq/elanfreq.c.
 
+	elevator=	[IOSCHED]
+			Format: {"bfq" | "kyber" | "mq-deadline" | "none"}
+			Default IO Scheduler for those devices that do not
+			require specialized schedulers, or do not otherwise
+			default to no scheduler. See *iosched entries in
+			Documentation/block/index.rst for more info.
+
 	elfcorehdr=[size[KMG]@]offset[KMG] [IA64,PPC,SH,X86,S390]
 			Specifies physical address of start of kernel core
 			image elf header and optionally the size. Generally
